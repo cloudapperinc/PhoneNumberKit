@@ -415,6 +415,28 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         let changedRange = textAsNSString.substring(with: range) as NSString
         let modifiedTextField = textAsNSString.replacingCharacters(in: range, with: string)
 
+        //MARK: - Modification Updates
+        
+        // Restrict deletion of '+'  as it causes a rare bug with particular numbers:
+        // Situation: country code sould be min 2 digits, delete it and type 00808 . Flag will be gone and cant place +
+         
+        if range.length>0  && range.location == 0 {
+                return false
+        }
+        // prevent adding another number before + sign
+        if range.location == 0 && (range.length == 0 || range.length == 1) {
+                return false
+        }
+        
+        // limit max characters
+        if let example = self.phoneNumberKit.getFormattedExampleNumber(forCountry: self.defaultRegion) {
+            if modifiedTextField.filter({ "0"..."9" ~= $0 }).count > example.filter ({ "0"..."9" ~= $0 }).count {
+                    return false
+                }
+        }
+        /// -> updates up to here
+        
+        
         let filteredCharacters = modifiedTextField.filter {
             String($0).rangeOfCharacter(from: (textField as! PhoneNumberTextField).nonNumericSet as CharacterSet) == nil
         }
