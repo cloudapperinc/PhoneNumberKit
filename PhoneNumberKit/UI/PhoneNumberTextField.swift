@@ -272,17 +272,21 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         guard let countryCode = phoneNumberKit.countryCode(for: currentRegion)?.description else { return nil }
         return "+" + countryCode
     }
-
+    //MARK: - Modification: +800 numbers have no valid flag so give a placeholder flag
     open func updateFlag() {
         guard self.withFlag else { return }
         let flagBase = UnicodeScalar("🇦").value - UnicodeScalar("A").value
-
-        let flag = self.currentRegion
+        
+        var flag = self.currentRegion
             .uppercased()
             .unicodeScalars
             .compactMap { UnicodeScalar(flagBase + $0.value)?.description }
             .joined()
-
+        
+        if flag == "🇕🇕🇖" {
+            flag = "📞"
+        }
+        
         self.flagButton.setTitle(flag + " ", for: .normal)
         let fontSize = (font ?? UIFont.preferredFont(forTextStyle: .body)).pointSize
         self.flagButton.titleLabel?.font = UIFont.systemFont(ofSize: fontSize)
@@ -415,27 +419,14 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         let changedRange = textAsNSString.substring(with: range) as NSString
         let modifiedTextField = textAsNSString.replacingCharacters(in: range, with: string)
 
-        //MARK: - Modification Updates
-        
-        // Restrict deletion of '+'  as it causes a rare bug with particular numbers:
-        // Situation: country code sould be min 2 digits, delete it and type 00808 . Flag will be gone and cant place +
-         
-        if range.length>0  && range.location == 0 {
-                return false
-        }
-        // prevent adding another number before + sign
-        if range.location == 0 && (range.length == 0 || range.length == 1) {
-                return false
-        }
-        
+        //MARK: - Modification
+       
         // limit max characters
         if let example = self.phoneNumberKit.getFormattedExampleNumber(forCountry: self.defaultRegion) {
             if modifiedTextField.filter({ "0"..."9" ~= $0 }).count > example.filter ({ "0"..."9" ~= $0 }).count {
                     return false
                 }
         }
-        /// -> updates up to here
-        
         
         let filteredCharacters = modifiedTextField.filter {
             String($0).rangeOfCharacter(from: (textField as! PhoneNumberTextField).nonNumericSet as CharacterSet) == nil
