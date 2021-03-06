@@ -422,9 +422,13 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
            let count = countryCode.count
                   for location in 0...count {
                    // prevent adding another number before
-                  if range.location == location && (range.length == 0 || range.length == 1) {
-                      return false
-                  }
+                    if range.location == location && (range.length == 0 || range.length == 1) {
+                          return false
+                    }
+                  // prevent replacing country code
+                    if range.length>0  && range.location == location {
+                          return false
+                    }
               }
         }
         
