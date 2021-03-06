@@ -277,16 +277,12 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
         guard self.withFlag else { return }
         let flagBase = UnicodeScalar("🇦").value - UnicodeScalar("A").value
         
-        var flag = self.currentRegion
+        let flag = self.currentRegion
             .uppercased()
             .unicodeScalars
             .compactMap { UnicodeScalar(flagBase + $0.value)?.description }
             .joined()
-        
-        if flag == "🇕🇕🇖" {
-            flag = "📞"
-        }
-        
+      
         self.flagButton.setTitle(flag + " ", for: .normal)
         let fontSize = (font ?? UIFont.preferredFont(forTextStyle: .body)).pointSize
         self.flagButton.titleLabel?.font = UIFont.systemFont(ofSize: fontSize)
@@ -421,6 +417,17 @@ open class PhoneNumberTextField: UITextField, UITextFieldDelegate {
 
         //MARK: - Modification
        
+        // restriction to delete country code
+        if let countryCode = phoneNumberKit.countryCode(for: currentRegion)?.description {
+           let count = countryCode.count
+                  for location in 0...count {
+                   // prevent adding another number before
+                  if range.location == location && (range.length == 0 || range.length == 1) {
+                      return false
+                  }
+              }
+        }
+        
         // limit max characters
         if let example = self.phoneNumberKit.getFormattedExampleNumber(forCountry: self.defaultRegion) {
             if modifiedTextField.filter({ "0"..."9" ~= $0 }).count > example.filter ({ "0"..."9" ~= $0 }).count {
